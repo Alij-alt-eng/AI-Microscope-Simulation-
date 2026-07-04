@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AI-Assisted Microscope Image Investigation</title>
+<style>
+  body{font-family:Arial, sans-serif;background:#f4f8fb;margin:0;color:#1d2733}
+  header{background:#0b4ea2;color:white;padding:22px;text-align:center}
+  main{max-width:1100px;margin:24px auto;padding:0 16px}
+  .card{background:white;border-radius:16px;box-shadow:0 4px 16px #0001;padding:20px;margin-bottom:18px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media(max-width:850px){.grid{grid-template-columns:1fr}}
+  button{background:#0b4ea2;color:white;border:0;border-radius:10px;padding:10px 14px;font-weight:bold;cursor:pointer}
+  button.secondary{background:#64748b}
+  select,input,textarea{width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:10px;margin:6px 0 12px}
+  .scope{height:360px;border-radius:16px;background:#111;display:flex;align-items:center;justify-content:center;overflow:hidden;border:12px solid #263238}
+  .field{width:310px;height:310px;border-radius:50%;background:#f8fbff;position:relative;box-shadow:inset 0 0 45px #0003;overflow:hidden}
+  .microbe{position:absolute}
+  .coccus{width:22px;height:22px;background:#7e22ce;border-radius:50%;box-shadow:0 0 2px #333}
+  .bacillus{width:45px;height:15px;background:#e11d48;border-radius:15px;transform:rotate(25deg)}
+  .hypha{width:170px;height:8px;background:#7c4a21;border-radius:8px;transform:rotate(20deg)}
+  .hypha:after{content:"";position:absolute;width:95px;height:7px;background:#7c4a21;border-radius:8px;left:75px;top:-28px;transform:rotate(-45deg)}
+  .proto{width:75px;height:48px;background:#93c5fd;border-radius:50%;border:3px solid #2563eb}
+  .proto:after{content:"";position:absolute;left:12px;top:16px;width:16px;height:16px;background:#1d4ed8;border-radius:50%}
+  .algae{width:68px;height:32px;background:#22c55e;border-radius:50%;border:3px solid #15803d}
+  .egg{width:78px;height:55px;background:#fde68a;border-radius:50%;border:5px solid #92400e}
+  .egg:after{content:"";position:absolute;left:22px;top:13px;width:24px;height:20px;background:#b45309;border-radius:50%}
+  .hidden{filter:blur(3px);opacity:.35}
+  .feedback{padding:12px;border-radius:12px;background:#eff6ff;border-left:5px solid #0b4ea2;min-height:60px}
+  table{width:100%;border-collapse:collapse}
+  th,td{border:1px solid #cbd5e1;padding:8px;text-align:left;font-size:14px}
+  th{background:#eaf2ff}
+  .badge{display:inline-block;background:#dbeafe;color:#0b4ea2;padding:4px 8px;border-radius:999px;font-size:13px;margin-right:5px}
+</style>
+</head>
+<body>
+<header>
+  <h1>AI-Assisted Microscope Image Investigation</h1>
+  <p>Objective: Explore how microorganisms can be identified through microscopic features.</p>
+</header>
+
+<main>
+  <section class="card">
+    <h2>How to Use the Simulation</h2>
+    <p>Choose an unknown slide, adjust magnification and focus, observe the microscopic features, then answer the AI guide questions. The simulation will give feedback after your identification.</p>
+    <span class="badge">Shape</span><span class="badge">Color/Stain</span><span class="badge">Arrangement</span><span class="badge">Movement</span><span class="badge">Special Structures</span>
+  </section>
+
+  <section class="grid">
+    <div class="card">
+      <h2>Virtual Microscope</h2>
+      <label>Unknown Slide</label>
+      <select id="slideSelect" onchange="loadSlide()">
+        <option value="bacteria">Slide A: Unknown Microorganism</option>
+        <option value="fungi">Slide B: Unknown Microorganism</option>
+        <option value="protozoa">Slide C: Unknown Microorganism</option>
+        <option value="algae">Slide D: Unknown Microorganism</option>
+        <option value="helminth">Slide E: Unknown Microorganism</option>
+      </select>
+      <label>Magnification</label>
+      <select id="mag" onchange="render()">
+        <option value="40">40x Scanning</option>
+        <option value="100">100x Low Power</option>
+        <option value="400">400x High Power</option>
+        <option value="1000">1000x Oil Immersion</option>
+      </select>
+      <label>Focus Level</label>
+      <input type="range" min="0" max="100" value="35" id="focus" oninput="render()" />
+      <div class="scope"><div class="field" id="field"></div></div>
+    </div>
+
+    <div class="card">
+      <h2>AI Laboratory Tutor</h2>
+      <div class="feedback" id="aiQuestion">Click “Start Investigation” to begin.</div>
+      <br>
+      <button onclick="nextQuestion()">Start / Next Question</button>
+      <button class="secondary" onclick="giveHint()">Give Hint</button>
+      <hr>
+      <label>1. Shape observed</label>
+      <input id="shape" placeholder="Example: round, rod-shaped, oval, filamentous">
+      <label>2. Color or stain</label>
+      <input id="color" placeholder="Example: purple, pink, green, transparent">
+      <label>3. Arrangement or structure</label>
+      <input id="arrangement" placeholder="Example: chains, clusters, hyphae, shell, cilia">
+      <label>4. Possible group</label>
+      <select id="answer">
+        <option value="">Select answer</option>
+        <option value="bacteria">Bacteria</option>
+        <option value="fungi">Fungi</option>
+        <option value="protozoa">Protozoa</option>
+        <option value="algae">Algae</option>
+        <option value="helminth">Helminth egg/larva</option>
+      </select>
+      <button onclick="checkAnswer()">Submit Identification</button>
+      <div class="feedback" id="feedback"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Observation Table</h2>
+    <table id="obsTable">
+      <tr><th>Slide</th><th>Shape</th><th>Color/Stain</th><th>Arrangement/Structure</th><th>Possible Group</th><th>Evidence</th></tr>
+    </table>
+  </section>
+</main>
+
+<script>
+const data = {
+ bacteria:{name:"Slide A", micro:"bacillus", count:18, color:"pink/red", group:"Bacteria", evidence:"Very small rod-shaped cells suggest bacilli. Pink/red staining suggests Gram-negative bacteria."},
+ fungi:{name:"Slide B", micro:"hypha", count:5, color:"brown/transparent", group:"Fungi", evidence:"Long branching filamentous structures are hyphae, a common feature of molds."},
+ protozoa:{name:"Slide C", micro:"proto", count:5, color:"blue/transparent", group:"Protozoa", evidence:"Larger unicellular bodies with visible internal structure suggest protozoa."},
+ algae:{name:"Slide D", micro:"algae", count:8, color:"green", group:"Algae", evidence:"Green pigment and chloroplast-like appearance indicate photosynthetic algae."},
+ helminth:{name:"Slide E", micro:"egg", count:3, color:"yellow-brown", group:"Helminth egg/larva", evidence:"Oval structures with thick shells and internal contents suggest helminth eggs."}
+};
+const questions = [
+ "AI Question 1: What is the general shape of the organism?",
+ "AI Question 2: Is it very small, large, filamentous, green, or egg-like?",
+ "AI Question 3: What color or staining reaction can you observe?",
+ "AI Question 4: Are there special structures such as hyphae, cilia, chloroplasts, or a thick shell?",
+ "AI Question 5: Based on your evidence, what microbial group does it most likely belong to?"
+];
+let q=0;
+function render(){
+ const selected=document.getElementById("slideSelect").value;
+ const d=data[selected];
+ const field=document.getElementById("field");
+ const focus=document.getElementById("focus").value;
+ const mag=parseInt(document.getElementById("mag").value);
+ field.innerHTML="";
+ const blur=Math.abs(80-focus)/16;
+ field.style.filter=`blur(${blur}px)`;
+ let scale= mag===40?.5:mag===100?.75:mag===400?1.05:1.35;
+ for(let i=0;i<d.count;i++){
+  const el=document.createElement("div");
+  el.className="microbe "+d.micro;
+  el.style.left=Math.random()*240+"px";
+  el.style.top=Math.random()*240+"px";
+  el.style.transform=(el.style.transform||"")+` scale(${scale}) rotate(${Math.random()*180}deg)`;
+  field.appendChild(el);
+ }
+}
+function loadSlide(){ q=0; document.getElementById("feedback").innerHTML=""; document.getElementById("aiQuestion").innerHTML="Click “Start Investigation” to begin."; render();}
+function nextQuestion(){ document.getElementById("aiQuestion").innerHTML=questions[q%questions.length]; q++; }
+function giveHint(){
+ const selected=document.getElementById("slideSelect").value;
+ const d=data[selected];
+ document.getElementById("aiQuestion").innerHTML="Hint: Look for this clue — "+d.evidence;
+}
+function checkAnswer(){
+ const selected=document.getElementById("slideSelect").value;
+ const ans=document.getElementById("answer").value;
+ const d=data[selected];
+ const fb=document.getElementById("feedback");
+ if(ans===selected){
+   fb.innerHTML="<b>Correct!</b> "+d.evidence;
+ } else {
+   fb.innerHTML="<b>Try again.</b> Recheck the observable clues. "+d.evidence;
+ }
+ const shape=document.getElementById("shape").value;
+ const color=document.getElementById("color").value;
+ const arr=document.getElementById("arrangement").value;
+ const table=document.getElementById("obsTable");
+ const row=table.insertRow(-1);
+ row.innerHTML=`<td>${d.name}</td><td>${shape}</td><td>${color}</td><td>${arr}</td><td>${document.getElementById("answer").selectedOptions[0].text}</td><td>${d.evidence}</td>`;
+}
+render();
+</script>
+</body>
+</html>
